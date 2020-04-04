@@ -163,10 +163,10 @@ public class MainVerticle extends AbstractVerticle {
                 .filter(service -> service.getStatus().equals(Status.FAIL))
                 .filter(service -> res.result().contains(service.getUrl()))
                 .forEach(service -> changeStatus(service, Status.FAIL));
-        updateStatusForUnkown(res);
+        updateStatusForUnknown(res);
     }
 
-    private void updateStatusForUnkown(AsyncResult<List<String>> res) {
+    private void updateStatusForUnknown(AsyncResult<List<String>> res) {
         List<PollService> pollWithoutStatus = services.values()
                 .stream()
                 .filter(service -> service.getStatus().equals(Status.NOT_TESTED))
