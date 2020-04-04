@@ -1,7 +1,7 @@
 package se.kry.codetest;
 
 public enum Status {
-    OK("OK"),FAIL("FAIL");
+    OK("OK"),FAIL("FAIL"), NOT_TESTED("NOT TESTED");
 
     private String name = "";
 

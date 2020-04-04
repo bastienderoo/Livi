@@ -99,7 +99,7 @@ public class MainVerticle extends AbstractVerticle {
     private void postRoute(Router router) {
         router.post("/service").handler(req -> {
             JsonObject jsonBody = req.getBodyAsJson();
-            postService(new PollService("test", "test", Status.FAIL, LocalDate.now()));
+            postService(new PollService(jsonBody.getString("name"), jsonBody.getString("url"), Status.NOT_TESTED, LocalDate.now()));
             req.response()
                     .putHeader("content-type", "text/plain")
                     .end("OK");
@@ -128,7 +128,7 @@ public class MainVerticle extends AbstractVerticle {
     private void deleteRoute(Router router) {
         router.delete("/service").handler(req -> {
             JsonObject jsonBody = req.getBodyAsJson();
-            deleteService("test");
+            deleteService(jsonBody.getString("url"));
             req.response()
                     .putHeader("content-type", "text/plain")
                     .end("OK");
