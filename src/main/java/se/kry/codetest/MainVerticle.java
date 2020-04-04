@@ -23,7 +23,7 @@ public class MainVerticle extends AbstractVerticle {
     private static final String POST_QUERY = "INSERT INTO service (url, name, status, creationDate) VALUES (?,?,?,?)";
     private static final String DELETE_QUERY = "DELETE FROM service WHERE url=?";
 
-    private HashMap<String, String> services = new HashMap<>();
+    private HashMap<String, String> services;
     private DBConnector connector;
     private BackgroundPoller poller = new BackgroundPoller();
 
@@ -33,7 +33,6 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
         getAllServices();
-        services.put("https://www.kry.se", "UNKNOWN");
         vertx.setPeriodic(1000 * 60, timerId -> poller.pollServices(services));
         setRoutes(router);
         vertx
@@ -52,6 +51,7 @@ public class MainVerticle extends AbstractVerticle {
     private void getAllServices() {
         connector.query(GET_ALL_QUERY).setHandler((AsyncResult<ResultSet> resultSet) -> {
             if (resultSet.succeeded()) {
+                services = new HashMap<>();
 
                 List<JsonArray> rows = resultSet.result().getResults();
                 rows
@@ -113,6 +113,7 @@ public class MainVerticle extends AbstractVerticle {
                 .add(pollService.getCreationDate().toString());
         connector.query(POST_QUERY, params).setHandler((AsyncResult<ResultSet> asyncResultSet) -> {
             if (asyncResultSet.succeeded()) {
+                getAllServices();
                 System.out.println("Pushed successfully");
             }
             if (asyncResultSet.failed()) {
@@ -138,6 +139,7 @@ public class MainVerticle extends AbstractVerticle {
                 .add(url);
         connector.query(DELETE_QUERY, params).setHandler((AsyncResult<ResultSet> asyncResultSet) -> {
             if (asyncResultSet.succeeded()) {
+                getAllServices();
                 System.out.println("Removed successfully");
             }
             if (asyncResultSet.failed()) {
