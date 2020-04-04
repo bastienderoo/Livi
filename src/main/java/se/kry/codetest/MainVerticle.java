@@ -21,6 +21,7 @@ public class MainVerticle extends AbstractVerticle {
 
     private static final String GET_ALL_QUERY = "SELECT * FROM service";
     private static final String POST_QUERY = "INSERT INTO service (url, name, status, creationDate) VALUES (?,?,?,?)";
+    private static final String DELETE_QUERY = "DELETE FROM service WHERE url=?";
 
     private HashMap<String, String> services = new HashMap<>();
     private DBConnector connector;
@@ -70,6 +71,40 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
+    private void setRoutes(Router router) {
+        router.route("/*").handler(StaticHandler.create());
+        getRoute(router);
+        postRoute(router);
+        deleteRoute(router);
+    }
+
+    private void getRoute(Router router) {
+        router.get("/service").handler(req -> {
+            List<JsonObject> jsonServices = services
+                    .entrySet()
+                    .stream()
+                    .map(service ->
+                            new JsonObject()
+                                    .put("name", service.getKey())
+                                    .put("status", service.getValue()))
+                    .collect(Collectors.toList());
+            req.response()
+                    .putHeader("content-type", "application/json")
+                    .end(new JsonArray(jsonServices).encode());
+        });
+    }
+
+    private void postRoute(Router router) {
+        router.post("/service").handler(req -> {
+            JsonObject jsonBody = req.getBodyAsJson();
+            postService(new PollService("test", "test", Status.FAIL, LocalDate.now()));
+            req.response()
+                    .putHeader("content-type", "text/plain")
+                    .end("OK");
+        });
+    }
+
+
     private void postService(PollService pollService) {
         JsonArray params = new JsonArray()
                 .add(pollService.getName())
@@ -86,37 +121,28 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    private void setRoutes(Router router) {
-        router.route("/*").handler(StaticHandler.create());
-        getService(router);
-        postService(router);
-    }
 
-    private void getService(Router router) {
-        router.get("/service").handler(req -> {
-            List<JsonObject> jsonServices = services
-                    .entrySet()
-                    .stream()
-                    .map(service ->
-                            new JsonObject()
-                                    .put("name", service.getKey())
-                                    .put("status", service.getValue()))
-                    .collect(Collectors.toList());
-            req.response()
-                    .putHeader("content-type", "application/json")
-                    .end(new JsonArray(jsonServices).encode());
-        });
-    }
-
-    private void postService(Router router) {
-        router.post("/service").handler(req -> {
+    private void deleteRoute(Router router) {
+        router.delete("/service").handler(req -> {
             JsonObject jsonBody = req.getBodyAsJson();
-            postService(new PollService("test", "test", Status.FAIL, LocalDate.now()));
-            // TODO connect to DB to post
-            services.put(jsonBody.getString("url"), "UNKNOWN");
+            deleteService("test");
             req.response()
                     .putHeader("content-type", "text/plain")
                     .end("OK");
+        });
+    }
+
+
+    private void deleteService(String url) {
+        JsonArray params = new JsonArray()
+                .add(url);
+        connector.query(DELETE_QUERY, params).setHandler((AsyncResult<ResultSet> asyncResultSet) -> {
+            if (asyncResultSet.succeeded()) {
+                System.out.println("Removed successfully");
+            }
+            if (asyncResultSet.failed()) {
+                System.out.println("An error as occurred");
+            }
         });
     }
 

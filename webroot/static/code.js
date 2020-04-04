@@ -24,3 +24,16 @@ saveButton.onclick = evt => {
   body: JSON.stringify({url:urlName})
 }).then(res=> location.reload());
 }
+
+const deleteButton = document.querySelector('#delete-service');
+deleteButton.onclick = evt => {
+    let urlName = document.querySelector('#url-name').value;
+    fetch('/service', {
+    method: 'delete',
+    headers: {
+    'Accept': 'application/json, text/plain, */*',
+    'Content-Type': 'application/json'
+    },
+  body: JSON.stringify({url:urlName})
+}).then(res=> location.reload());
+}
