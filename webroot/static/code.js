@@ -7,8 +7,10 @@ fetch(servicesRequest)
     .then(function (serviceList) {
         serviceList.forEach(service => {
             const li = document.createElement("li");
-            li.appendChild(document.createTextNode(service.name + ': ' + service.status + ': ' + service.creationDate + ': ' + service.url));
-            // TODO add delete button
+            li.appendChild(document.createTextNode('Url: ' + service.url));
+            li.appendChild(document.createTextNode(' Name: ' + service.name));
+            li.appendChild(document.createTextNode(' Status: ' + service.status));
+            li.appendChild(document.createTextNode(' Creation Date: ' + service.creationDate));
             const button = document.createElement("button");
             button.innerHTML = "x";
             button.onclick = evt => deleteService(service.url);
