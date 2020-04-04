@@ -57,6 +57,7 @@ public class MainVerticle extends AbstractVerticle {
     });
     router.post("/service").handler(req -> {
       JsonObject jsonBody = req.getBodyAsJson();
+      // TODO connect to DB to post
       services.put(jsonBody.getString("url"), "UNKNOWN");
       req.response()
           .putHeader("content-type", "text/plain")
