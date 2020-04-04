@@ -23,7 +23,7 @@ public class MainVerticle extends AbstractVerticle {
     private static final String POST_QUERY = "INSERT INTO service (url, name, status, creationDate) VALUES (?,?,?,?)";
     private static final String DELETE_QUERY = "DELETE FROM service WHERE url=?";
 
-    private HashMap<String, String> services;
+    private HashMap<String, PollService> services;
     private DBConnector connector;
     private BackgroundPoller poller = new BackgroundPoller();
 
@@ -62,7 +62,7 @@ public class MainVerticle extends AbstractVerticle {
                                 Status.valueOf(row.getString(2)),
                                 getLocalDateFromLong(row.getLong(3))
                         ))
-                        .forEach((PollService pollService) -> services.put(pollService.getName(), pollService.getStatus().toString()));
+                        .forEach((PollService pollService) -> services.put(pollService.getUrl(), pollService));
                 System.out.println("Get All services");
             }
             if (resultSet.failed()) {
@@ -85,8 +85,10 @@ public class MainVerticle extends AbstractVerticle {
                     .stream()
                     .map(service ->
                             new JsonObject()
-                                    .put("name", service.getKey())
-                                    .put("status", service.getValue()))
+                                    .put("url", service.getKey())
+                                    .put("status", service.getValue().getStatus())
+                                    .put("creationDate", service.getValue().getCreationDate().toString())
+                                    .put("name", service.getValue().getName()))
                     .collect(Collectors.toList());
             req.response()
                     .putHeader("content-type", "application/json")

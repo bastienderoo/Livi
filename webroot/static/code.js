@@ -6,7 +6,7 @@ fetch(servicesRequest)
   serviceList.forEach(service => {
     var li = document.createElement("li");
     // TODO ADD service date
-    li.appendChild(document.createTextNode(service.name + ': ' + service.status));
+    li.appendChild(document.createTextNode(service.name + ': ' + service.status + ': ' + service.creationDate + ': ' + service.url ));
     // TODO add delete button
     listContainer.appendChild(li);
   });
