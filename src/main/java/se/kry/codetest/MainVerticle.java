@@ -22,8 +22,9 @@ public class MainVerticle extends AbstractVerticle {
     private static final String GET_ALL_QUERY = "SELECT * FROM service";
     private static final String POST_QUERY = "INSERT INTO service (url, name, status, creationDate) VALUES (?,?,?,?)";
     private static final String DELETE_QUERY = "DELETE FROM service WHERE url=?";
+    private static final String UPDATE_STATUS_QUERY = "UPDATE service SET status = ? WHERE url = ?";
 
-    private HashMap<String, PollService> services;
+    private HashMap<String, PollService> services = new HashMap<>();
     private DBConnector connector;
     private BackgroundPoller poller = new BackgroundPoller();
 
@@ -33,7 +34,7 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
         getAllServices();
-        vertx.setPeriodic(1000 * 60, timerId -> poller.pollServices(services));
+        vertx.setPeriodic(200 * 60, timerId -> poller.pollServices(services).setHandler(this::checkChangeStatus));
         setRoutes(router);
         vertx
                 .createHttpServer()
@@ -48,6 +49,7 @@ public class MainVerticle extends AbstractVerticle {
                 });
     }
 
+
     private void getAllServices() {
         connector.query(GET_ALL_QUERY).setHandler((AsyncResult<ResultSet> resultSet) -> {
             if (resultSet.succeeded()) {
@@ -59,8 +61,8 @@ public class MainVerticle extends AbstractVerticle {
                         .map(row -> new PollService(
                                 row.getString(0),
                                 row.getString(1),
-                                Status.valueOf(row.getString(2)),
-                                getLocalDateFromLong(row.getLong(3))
+                                Status.valueOf(row.getString(3)),
+                                getLocalDateFromLong(row.getLong(2))
                         ))
                         .forEach((PollService pollService) -> services.put(pollService.getUrl(), pollService));
                 System.out.println("Get All services");
@@ -109,8 +111,8 @@ public class MainVerticle extends AbstractVerticle {
 
     private void postService(PollService pollService) {
         JsonArray params = new JsonArray()
-                .add(pollService.getName())
                 .add(pollService.getUrl())
+                .add(pollService.getName())
                 .add(pollService.getStatus().toString())
                 .add(pollService.getCreationDate().toString());
         connector.query(POST_QUERY, params).setHandler((AsyncResult<ResultSet> asyncResultSet) -> {
@@ -143,6 +145,50 @@ public class MainVerticle extends AbstractVerticle {
             if (asyncResultSet.succeeded()) {
                 getAllServices();
                 System.out.println("Removed successfully");
+            }
+            if (asyncResultSet.failed()) {
+                System.out.println("An error as occurred");
+            }
+        });
+    }
+
+    private void checkChangeStatus(AsyncResult<List<String>> res) {
+        services.values()
+                .stream()
+                .filter(service -> service.getStatus().equals(Status.OK))
+                .filter(service -> !res.result().contains(service.getUrl()))
+                .forEach(service -> changeStatus(service, Status.OK));
+        services.values()
+                .stream()
+                .filter(service -> service.getStatus().equals(Status.FAIL))
+                .filter(service -> res.result().contains(service.getUrl()))
+                .forEach(service -> changeStatus(service, Status.FAIL));
+        updateStatusForUnkown(res);
+    }
+
+    private void updateStatusForUnkown(AsyncResult<List<String>> res) {
+        List<PollService> pollWithoutStatus = services.values()
+                .stream()
+                .filter(service -> service.getStatus().equals(Status.NOT_TESTED))
+                .collect(Collectors.toList());
+        pollWithoutStatus.forEach(pollService -> {
+            if (res.result().contains(pollService.getUrl())){
+                changeStatus(pollService, Status.OK);
+            } else {
+                changeStatus(pollService, Status.FAIL);
+            }
+        });
+    }
+
+    private void changeStatus(PollService service, Status status) {
+        System.out.println("Change : " + service.getUrl() + " to status : " + status);
+        JsonArray params = new JsonArray()
+                .add(status)
+                .add(service.getUrl());
+        connector.query(UPDATE_STATUS_QUERY, params).setHandler((AsyncResult<ResultSet> asyncResultSet) -> {
+            if (asyncResultSet.succeeded()) {
+                getAllServices();
+                System.out.println("Update successfully");
             }
             if (asyncResultSet.failed()) {
                 System.out.println("An error as occurred");

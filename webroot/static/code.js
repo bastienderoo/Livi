@@ -6,10 +6,10 @@ fetch(servicesRequest)
     })
     .then(function (serviceList) {
         serviceList.forEach(service => {
-            var li = document.createElement("li");
+            const li = document.createElement("li");
             li.appendChild(document.createTextNode(service.name + ': ' + service.status + ': ' + service.creationDate + ': ' + service.url));
             // TODO add delete button
-            var button = document.createElement("button");
+            const button = document.createElement("button");
             button.innerHTML = "x";
             button.onclick = evt => deleteService(service.url);
             li.appendChild(button);
@@ -28,7 +28,7 @@ saveButton.onclick = evt => {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({url: urlName, name: name})
-    }).then(res => location.reload());
+        }).then(res => location.reload());
 }
 
 function deleteService(url) {
