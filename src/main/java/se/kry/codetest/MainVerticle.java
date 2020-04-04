@@ -23,6 +23,7 @@ public class MainVerticle extends AbstractVerticle {
     private static final String POST_QUERY = "INSERT INTO service (url, name, status, creationDate) VALUES (?,?,?,?)";
     private static final String DELETE_QUERY = "DELETE FROM service WHERE url=?";
     private static final String UPDATE_STATUS_QUERY = "UPDATE service SET status = ? WHERE url = ?";
+    private static final String REGEX_URL = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
     private HashMap<String, PollService> services = new HashMap<>();
     private DBConnector connector;
@@ -110,6 +111,8 @@ public class MainVerticle extends AbstractVerticle {
 
 
     private void postService(PollService pollService) {
+        if(pollService.getUrl().matches(REGEX_URL)){
+
         JsonArray params = new JsonArray()
                 .add(pollService.getUrl())
                 .add(pollService.getName())
@@ -124,6 +127,9 @@ public class MainVerticle extends AbstractVerticle {
                 System.out.println("An error as occurred");
             }
         });
+        } else {
+            System.out.println("Url doesn't match url pattern");
+        }
     }
 
 
